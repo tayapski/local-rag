@@ -24,3 +24,30 @@ These notes track key Go concepts discovered while building the `local-rag` proj
 
 ## 5. Idiomatic CLI Structure
 - **Centralization vs. Modularity**: Go favors modularity. Instead of one giant list of commands in `root.go`, each command registers itself. This prevents "bottleneck" files as the project scales.
+
+## 6. Short Variable Declaration (`:=`)
+- **Combined Action**: Declares a new variable and assigns it a value in one step.
+- **Inference**: Go automatically determines the type based on the value on the right side.
+- **Scope**: Only works inside functions. Top-level variables must use the `var` keyword.
+
+## 7. Multiple Return Values
+- **Pattern**: Functions in Go frequently return more than one value, usually `(result, error)`.
+- **Handling**: You must handle or explicitly ignore all returned values. Using `_` allows you to ignore a value you don't need.
+
+## 8. Interfaces (The "Contract")
+- **Definition**: A set of method signatures. It defines **behavior**, not data.
+- **Implicit Satisfaction**: You don't "implement" an interface explicitly. If a struct has the methods defined in an interface, it satisfies it automatically.
+- **The `io.Reader`**: One of the most common interfaces. It represents anything that can be read into a byte slice.
+
+## 9. The `defer` Keyword
+- **Purpose**: Schedules a function call to run immediately before the surrounding function returns.
+- **Common Use**: Cleanup tasks like closing files (`f.Close()`) or unlocking mutexes.
+- **LIFO Order**: If you use multiple `defers`, they run in "Last-In, First-Out" order.
+
+## 10. Function Signatures & Returns
+- **Strictness**: A function must return exactly the number and type of values defined in its signature.
+- **Cobra Run vs RunE**: The standard `Run` function in Cobra returns nothing. If you need to return an error to the user, use `RunE`, which expects an `error` return value.
+
+## 11. Built-in Functions
+- **Generics**: Functions like `min()` and `max()` (added in Go 1.21) are built-in and work across different numeric types.
+- **Safety**: Use `min(desired, len(thing))` to safely slice strings or slices without going "out of bounds."
