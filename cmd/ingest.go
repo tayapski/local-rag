@@ -5,7 +5,7 @@ import (
 	"os"
 	"path/filepath"
 	"github.com/spf13/cobra"
-	"github.com/ledongthuc/pdf"
+	"local-rag/internal/ingest"
 )
 
 var bookPath string
@@ -23,6 +23,8 @@ var ingestCmd = &cobra.Command{
 			return err
 		}
 
+		ingestor := ingest.Ingestor{Topic: topic}
+
 		for _, file := range dirEntries {
 			fileName := file.Name()
 			fileExt := filepath.Ext(fileName)
@@ -32,39 +34,14 @@ var ingestCmd = &cobra.Command{
 			fmt.Println("Reading", fileName)
 
 			fullPath := bookPath + "/" + fileName
-			f, err := os.Open(fullPath)
-			if err != nil {
-				return err
-			}
-			defer f.Close()
-
-			fileMeta, err := f.Stat()
-			if err != nil {
-				return err
-			}
-			
-			reader, err := pdf.NewReader(f, fileMeta.Size())
+			content, err := ingestor.ExtractText(fullPath)
 			if err != nil {
 				return err
 			}
 
-			page := reader.Page(1)
-			if page.V.IsNull() {
-				return fmt.Errorf("Page is null")
-			}
-
-			content, err := page.GetPlainText(nil)
-			if err != nil {
-				return err
-			}
-
-			endCharacterCount := min(100, len(content))
-			fmt.Println(fileName, content[:endCharacterCount])
-
+			fmt.Printf("Successfully read %d characters from %s\n", len(content), fileName)
 
 		}
-
-		
 
 		return nil
     },

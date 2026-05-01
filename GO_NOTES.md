@@ -51,3 +51,12 @@ These notes track key Go concepts discovered while building the `local-rag` proj
 ## 11. Built-in Functions
 - **Generics**: Functions like `min()` and `max()` (added in Go 1.21) are built-in and work across different numeric types.
 - **Safety**: Use `min(desired, len(thing))` to safely slice strings or slices without going "out of bounds."
+
+## 12. Methods & Receivers
+- **No Classes**: Go uses methods on structs instead of classes.
+- **Receiver Syntax**: `func (p *Processor) DoSomething()` attaches a function to a struct. The `p` is the "receiver" (similar to `self` or `this`).
+- **Pointer Receivers**: Using `*Processor` allows the method to modify the struct's data and is more memory-efficient for large structs.
+
+## 13. High-Performance Strings (`strings.Builder`)
+- **Immutability**: Go strings are immutable. Adding strings with `+` in a loop creates many temporary objects in memory.
+- **Builder**: Use `strings.Builder` to efficiently accumulate large amounts of text. Use `.WriteString()` and then `.String()` at the end.
