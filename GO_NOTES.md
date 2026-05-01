@@ -60,3 +60,8 @@ These notes track key Go concepts discovered while building the `local-rag` proj
 ## 13. High-Performance Strings (`strings.Builder`)
 - **Immutability**: Go strings are immutable. Adding strings with `+` in a loop creates many temporary objects in memory.
 - **Builder**: Use `strings.Builder` to efficiently accumulate large amounts of text. Use `.WriteString()` and then `.String()` at the end.
+
+## 14. Runes vs. Bytes
+- **Strings as Bytes**: In Go, `string` is a slice of bytes. `len(str)` returns the number of bytes, not characters.
+- **Runes**: A `rune` (alias for `int32`) represents a single Unicode character.
+- **Safety**: When slicing strings that might contain non-ASCII characters, convert the string to `[]rune` first: `runes := []rune(str)`.

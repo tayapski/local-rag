@@ -34,12 +34,12 @@ var ingestCmd = &cobra.Command{
 			fmt.Println("Reading", fileName)
 
 			fullPath := bookPath + "/" + fileName
-			content, err := ingestor.ExtractText(fullPath)
+			chunks, err := ingestor.ExtractChunk(fullPath)
 			if err != nil {
 				return err
 			}
 
-			fmt.Printf("Successfully read %d characters from %s\n", len(content), fileName)
+			fmt.Printf("Successfully read %d chunks from %s\n", len(chunks), fileName)
 
 		}
 
