@@ -65,3 +65,15 @@ These notes track key Go concepts discovered while building the `local-rag` proj
 - **Strings as Bytes**: In Go, `string` is a slice of bytes. `len(str)` returns the number of bytes, not characters.
 - **Runes**: A `rune` (alias for `int32`) represents a single Unicode character.
 - **Safety**: When slicing strings that might contain non-ASCII characters, convert the string to `[]rune` first: `runes := []rune(str)`.
+
+## 15. JSON Struct Tags
+- **The Concept**: Backticks `` `json:"key_name"` `` tell Go how to rename struct fields when converting to/from JSON.
+- **Why**: Go fields often start with Uppercase (for visibility), but JSON APIs often expect lowercase.
+
+## 16. The "New..." Constructor Pattern
+- **Convention**: Since Go lacks explicit constructors, we use functions like `func NewClient(...) *Client`.
+- **Pointers**: Usually returns a pointer (`*`) to the struct so it can be shared and modified across the app.
+
+## 17. Creating Custom Errors (`fmt.Errorf`)
+- **Usage**: Use `fmt.Errorf("message: %v", value)` to create a new error on the fly.
+- **Wrapping**: Use the `%w` verb to wrap an existing error, preserving the original error's context: `fmt.Errorf("context: %w", err)`.

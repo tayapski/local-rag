@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 	"github.com/spf13/cobra"
 	"local-rag/internal/ingest"
+	"local-rag/internal/ai"
 )
 
 var bookPath string
@@ -16,6 +17,7 @@ var ingestCmd = &cobra.Command{
     Short: "Ingest files (text or otherwise) into the knowledge base",
     RunE: func(cmd *cobra.Command, args []string) error {
         fmt.Printf("Ingesting books within %s\n", bookPath)
+		aiClient := ai.NewClient("http://localhost:11434")
 		dirEntries, err := os.ReadDir(bookPath)
 
 		if err != nil{
@@ -40,6 +42,19 @@ var ingestCmd = &cobra.Command{
 			}
 
 			fmt.Printf("Successfully read %d chunks from %s\n", len(chunks), fileName)
+
+			for _, chunk := range chunks {
+				embedding, err := aiClient.GetEmbedding("nomic-embed-text", chunk.Content)
+				if err != nil {
+					return err
+				}
+
+				fmt.Printf("Chunk %d embedded, Vector size: %d\n", chunk.ChunkIndex, len(embedding))
+
+				if chunk.ChunkIndex == 4 {
+					break
+				}
+			}
 
 		}
 
