@@ -94,5 +94,14 @@ These notes track key Go concepts discovered while building the `local-rag` proj
 
 ## 21. Error Analysis & String Inspection
 - **`err.Error()`**: Converts an error object into its string representation.
-- **`strings.Contains(str, substr)`**: A safe way to check for specific keywords in an error message (like "already exists" or "timeout").
-- **Soft Errors**: Not every error should stop the program. Informational logging (printing a warning) is a valid pattern for non-breaking issues.
+- **`strings.Contains(str, substr)`**: A safe way to check for specific keywords in an error message.
+
+## 22. Goroutines (Concurrency)
+- **The `go` Keyword**: Prefixing a function call with `go` starts a lightweight thread (goroutine) that runs independently.
+- **`sync.WaitGroup`**: Used to wait for a collection of goroutines to finish. Use `.Add(n)`, `.Done()`, and `.Wait()`.
+
+## 23. Channels (The Pipeline)
+- **The Concept**: A typed conduit through which you can send and receive values.
+- **Unbuffered**: `make(chan int)`. Sending and receiving block until both sides are ready (a "handshake").
+- **Buffered**: `make(chan int, capacity)`. Sends only block when the buffer is full. Receives only block when the buffer is empty.
+- **Closing**: Use `close(ch)` to signal completion. You can still receive from a closed channel until the buffer is empty, but you cannot send to it.

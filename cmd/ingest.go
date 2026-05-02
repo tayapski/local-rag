@@ -64,16 +64,12 @@ var ingestCmd = &cobra.Command{
 
 			fmt.Printf("Successfully read %d chunks from %s\n", len(chunks), fileName)
 
-			for idx, chunk := range chunks {
-				embedding, err := aiClient.GetEmbedding("nomic-embed-text", chunk.Content)
-				if err != nil {
-					return err
-				}
-				chunks[idx].Embedding = utils.ConvertSlice(embedding)
-				// fmt.Printf("Chunk %d embedded, Vector size: %d\n", chunk.ChunkIndex, len(embedding))
-
+			err = aiClient.BatchEmbed("nomic-embed-text", chunks, 4)
+			if err != nil {
+				return err
 			}
 
+			fmt.Printf("Retrieved embeddings for %s\n", fileName)
 			err = storeClient.UpsertChunks(topic, chunks)
 			if err != nil {
 				return err

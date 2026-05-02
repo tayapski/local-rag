@@ -4,7 +4,10 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"local-rag/internal/ingest"
+	"local-rag/internal/utils"
 	"net/http"
+	"sync"
 )
 
 type Client struct {
@@ -26,6 +29,38 @@ func NewClient(baseURL string) *Client {
 		BaseURL: baseURL,
 		HTTPClient: &http.Client{},
 	}
+}
+
+func (c *Client) BatchEmbed(model string, chunks []ingest.Chunk, concurrency int) error {
+	jobs := make(chan int, len(chunks))
+	var wg sync.WaitGroup
+
+	for w := 1; w<= concurrency; w++ {
+		wg.Add(1)
+
+		go func() {
+			defer wg.Done()
+
+			for index := range jobs {
+				vector, err := c.GetEmbedding(model, chunks[index].Content)
+				if err != nil {
+					fmt.Printf("Error embedding chunk %d: %v\n", index, err)
+					continue
+				}
+
+				chunks[index].Embedding = utils.ConvertSlice(vector)
+			}
+		}()
+	}
+
+	for i := range chunks {
+		jobs <- i
+	}
+
+	close(jobs)
+
+	wg.Wait()
+	return nil
 }
 
 func (c *Client) GetEmbedding(model string, prompt string) ([]float64, error) {
