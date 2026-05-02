@@ -5,7 +5,6 @@ import (
 	"local-rag/internal/ai"
 	"local-rag/internal/ingest"
 	"local-rag/internal/store"
-	"local-rag/internal/utils"
 	"os"
 	"path/filepath"
 	"strings"
