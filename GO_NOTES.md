@@ -29,6 +29,7 @@ These notes track key Go concepts discovered while building the `local-rag` proj
 - **Combined Action**: Declares a new variable and assigns it a value in one step.
 - **Inference**: Go automatically determines the type based on the value on the right side.
 - **Scope**: Only works inside functions. Top-level variables must use the `var` keyword.
+- **Limitation**: You cannot use `:=` to assign to a variable that has already been declared in the same scope. Use `=` for subsequent assignments.
 
 ## 7. Multiple Return Values
 - **Pattern**: Functions in Go frequently return more than one value, usually `(result, error)`.
@@ -77,3 +78,21 @@ These notes track key Go concepts discovered while building the `local-rag` proj
 ## 17. Creating Custom Errors (`fmt.Errorf`)
 - **Usage**: Use `fmt.Errorf("message: %v", value)` to create a new error on the fly.
 - **Wrapping**: Use the `%w` verb to wrap an existing error, preserving the original error's context: `fmt.Errorf("context: %w", err)`.
+
+## 18. Context (`context.Context`)
+- **Purpose**: Carries deadlines, cancellation signals, and other request-scoped values across API boundaries and goroutines.
+- **Convention**: Always pass it as the first argument in functions that perform I/O (Database calls, HTTP requests).
+- **Background**: `context.Background()` is the default "empty" context used when you don't have a specific deadline yet.
+
+## 19. Type Casting (Conversions)
+- **Strictness**: Go does NOT implicitly convert types.
+- **Syntax**: `destinationValue := typeName(sourceValue)`.
+
+## 20. For-Range Loop Behavior (The "Copy" Gotcha)
+- **Value Copy**: By default, `for i, v := range slice` creates a copy.
+- **Modifying Slices**: Use the index: `slice[i].Field = value`.
+
+## 21. Error Analysis & String Inspection
+- **`err.Error()`**: Converts an error object into its string representation.
+- **`strings.Contains(str, substr)`**: A safe way to check for specific keywords in an error message (like "already exists" or "timeout").
+- **Soft Errors**: Not every error should stop the program. Informational logging (printing a warning) is a valid pattern for non-breaking issues.

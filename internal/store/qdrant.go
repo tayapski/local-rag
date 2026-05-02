@@ -1,0 +1,80 @@
+package store
+
+import (
+	"context"
+	"github.com/qdrant/go-client/qdrant"
+	"local-rag/internal/ingest"
+)
+
+type Store struct {
+	client *qdrant.Client
+}
+
+func NewStore() (*Store, error) {
+	client, err := qdrant.NewClient(
+		&qdrant.Config{
+			Host: "localhost",
+			Port: 6334,
+		},
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	return &Store{
+		client: client,
+	}, nil
+}
+
+func (s *Store) CreateCollection(collectionName string) error {
+	err := s.client.CreateCollection(
+		context.Background(),
+		&qdrant.CreateCollection{
+			CollectionName: collectionName,
+			VectorsConfig: qdrant.NewVectorsConfig(&qdrant.VectorParams{
+				Size: 768,
+				Distance: qdrant.Distance_Cosine,
+			}),
+		},
+	)
+
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *Store) UpsertChunks(collectionName string, chunks []ingest.Chunk) error {
+
+	pointStructSlice := make([]*qdrant.PointStruct, len(chunks))
+
+	for i, chunk := range chunks {
+		
+		pointStructSlice[i] = &qdrant.PointStruct{
+			Id: qdrant.NewIDUUID(chunks[i].ID),
+			Vectors: qdrant.NewVectors(chunk.Embedding...),
+			Payload: qdrant.NewValueMap(map[string]any{
+				"content": chunk.Content,
+				"page": chunk.PageNumber,
+				"file_path": chunk.FilePath,
+			}),
+		}
+	}
+
+	wait := true
+	_, err := s.client.Upsert(
+		context.Background(),
+		&qdrant.UpsertPoints{
+			CollectionName: collectionName,
+			Points: pointStructSlice,
+			Wait: &wait,
+		},
+	)
+
+	if err != nil {
+		return err
+	}
+
+	return nil
+
+}
