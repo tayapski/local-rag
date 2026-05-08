@@ -24,6 +24,17 @@ type EmbeddingResponse struct {
 	Embedding []float64 `json:"embedding"`
 }
 
+type GenerateRequest struct {
+	Model		string 	`json:"model"`
+	Prompt		string	`json:"prompt"`
+	StreamMode	bool	`json:"stream"`
+
+}
+
+type GenerateResponse struct {
+	Response 	string	`json:"response"`
+}
+
 func NewClient(baseURL string) *Client {
 	return &Client{
 		BaseURL: baseURL,
@@ -96,3 +107,38 @@ func (c *Client) GetEmbedding(model string, prompt string) ([]float64, error) {
 
 }
 
+func (c *Client) Generate(model string, prompt string) (string, error){
+
+	reqBody := GenerateRequest{
+		Model: model,
+		Prompt: prompt,
+		StreamMode: false,
+	}
+
+	encodedJsonBody, err := json.Marshal(reqBody);
+	if err != nil {
+		return "", err
+	}
+
+	resp, err := c.HTTPClient.Post(c.BaseURL+"/api/generate", "application/json", bytes.NewReader(encodedJsonBody))
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+
+
+	var response GenerateResponse
+	responseCode := resp.StatusCode
+	if responseCode != http.StatusOK {
+		return "", fmt.Errorf("ollama returned status: %d", responseCode)
+	}
+
+	responseErr := json.NewDecoder(resp.Body).Decode(&response)
+	if responseErr != nil {
+		return "", responseErr
+	}
+
+	return response.Response, nil
+
+
+}

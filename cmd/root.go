@@ -6,6 +6,8 @@ import (
 	"github.com/spf13/cobra"
 )
 
+var topic	string
+
 var rootCmd = &cobra.Command{
     Use:   "local-rag",
     Short: "A local RAG CLI for Carlo's library",

@@ -105,3 +105,8 @@ These notes track key Go concepts discovered while building the `local-rag` proj
 - **Unbuffered**: `make(chan int)`. Sending and receiving block until both sides are ready (a "handshake").
 - **Buffered**: `make(chan int, capacity)`. Sends only block when the buffer is full. Receives only block when the buffer is empty.
 - **Closing**: Use `close(ch)` to signal completion. You can still receive from a closed channel until the buffer is empty, but you cannot send to it.
+
+## 24. Package-Level Redeclaration Error
+- **The Conflict**: Since all files in a folder share the same `package` scope, you cannot declare the same variable at the top level in two different files (e.g., `var topic string` in both `ingest.go` and `ask.go`).
+- **The Error**: `topic redeclared in this block`.
+- **Solution**: Declare shared variables once in a common file like `root.go`, or keep them local to a function if they don't need package-wide visibility.

@@ -13,7 +13,6 @@ import (
 )
 
 var bookPath string
-var topic	string
 
 
 var ingestCmd = &cobra.Command{

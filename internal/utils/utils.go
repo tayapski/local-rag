@@ -7,3 +7,7 @@ func ConvertSlice(input []float64) []float32 {
     }
     return output
 }
+
+func PtrUint64(v uint64) *uint64 {
+	return &v
+}

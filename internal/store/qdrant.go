@@ -2,8 +2,10 @@ package store
 
 import (
 	"context"
-	"github.com/qdrant/go-client/qdrant"
 	"local-rag/internal/ingest"
+	"local-rag/internal/utils"
+
+	"github.com/qdrant/go-client/qdrant"
 )
 
 type Store struct {
@@ -77,4 +79,27 @@ func (s *Store) UpsertChunks(collectionName string, chunks []ingest.Chunk) error
 
 	return nil
 
+}
+
+func (s *Store) Search(collectionName string, queryVector []float32) ([]string, error){
+	searchResult, err := s.client.Query(
+		context.Background(),
+		&qdrant.QueryPoints{
+			CollectionName: collectionName,
+			Query: qdrant.NewQuery(queryVector...),
+			Limit: utils.PtrUint64(uint64(5)),
+			WithPayload: qdrant.NewWithPayloadEnable(true),
+		},
+	)
+
+	if err != nil{
+		return nil, err
+	}
+	
+	payloadContents := make([]string, len(searchResult))
+	for i := range searchResult {
+		payloadContents[i] = searchResult[i].Payload["content"].GetStringValue()
+	}
+
+	return payloadContents, nil
 }
