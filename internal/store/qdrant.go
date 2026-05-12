@@ -2,8 +2,10 @@ package store
 
 import (
 	"context"
+	"local-rag/internal/config"
 	"local-rag/internal/ingest"
 	"local-rag/internal/utils"
+	"strconv"
 
 	"github.com/qdrant/go-client/qdrant"
 )
@@ -13,10 +15,17 @@ type Store struct {
 }
 
 func NewStore() (*Store, error) {
+	cfg := config.GetConfig()
+	port, err := strconv.Atoi(cfg.QdrantPort)
+
+	if err != nil {
+		return nil, err
+	}
+
 	client, err := qdrant.NewClient(
 		&qdrant.Config{
-			Host: "localhost",
-			Port: 6334,
+			Host: cfg.QdrantHost,
+			Port: port,
 		},
 	)
 	if err != nil {

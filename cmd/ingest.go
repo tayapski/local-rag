@@ -5,10 +5,10 @@ import (
 	"local-rag/internal/ai"
 	"local-rag/internal/ingest"
 	"local-rag/internal/store"
+	"local-rag/internal/config"
 	"os"
 	"path/filepath"
 	"strings"
-
 	"github.com/spf13/cobra"
 )
 
@@ -20,7 +20,8 @@ var ingestCmd = &cobra.Command{
     Short: "Ingest files (text or otherwise) into the knowledge base",
     RunE: func(cmd *cobra.Command, args []string) error {
         fmt.Printf("Ingesting books within %s\n", bookPath)
-		aiClient := ai.NewClient("http://localhost:11434")
+		envConfig := config.GetConfig()
+		aiClient := ai.NewClient(envConfig.OllamaURL)
 		storeClient, err := store.NewStore()
 		if err != nil {
 			return err

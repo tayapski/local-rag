@@ -3,9 +3,11 @@ package cmd
 import (
 	"fmt"
 	"local-rag/internal/ai"
+	"local-rag/internal/config"
 	"local-rag/internal/store"
 	"local-rag/internal/utils"
 	"strings"
+
 	"github.com/spf13/cobra"
 )
 
@@ -13,7 +15,9 @@ var askCmd = &cobra.Command{
 	Use: "ask",
 	Short: "Ask questions about a topic",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		aiClient := ai.NewClient("http://localhost:11434")
+		envConfig := config.GetConfig()
+
+		aiClient := ai.NewClient(envConfig.OllamaURL)
 		storeClient, err := store.NewStore()
 
 		if err != nil {
