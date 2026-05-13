@@ -110,3 +110,8 @@ These notes track key Go concepts discovered while building the `local-rag` proj
 - **The Conflict**: Since all files in a folder share the same `package` scope, you cannot declare the same variable at the top level in two different files (e.g., `var topic string` in both `ingest.go` and `ask.go`).
 - **The Error**: `topic redeclared in this block`.
 - **Solution**: Declare shared variables once in a common file like `root.go`, or keep them local to a function if they don't need package-wide visibility.
+
+## 25. Dependency Management
+- **`go get <package>`**: Downloads a specific package and adds it to your `go.mod` file.
+- **`go mod tidy`**: Cleans up your `go.mod` and `go.sum` files. It removes unused dependencies and adds missing ones based on your imports.
+- **`go mod download`**: Downloads all dependencies listed in your `go.mod` file to your local cache. Useful for CI/CD or fresh setups.
