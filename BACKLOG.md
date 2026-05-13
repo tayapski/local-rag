@@ -10,9 +10,13 @@
 - [ ] **Feedback**: Ensure the spinner starts when the LLM begins generating and stops/clears when the answer is ready to print.
 
 ## Priority 3: Architecture (Singleton Config)
-- [ ] **New Package**: Create `internal/config/config.go`.
-- [ ] **Singleton Pattern**: Use `sync.Once` to initialize a global configuration struct.
-- [ ] **Refactor**: Replace hardcoded literals in `ai/client.go`, `store/qdrant.go`, and `cmd/` with calls to `config.Get()`.
+- [x] **New Package**: Create `internal/config/config.go`.
+- [x] **Singleton Pattern**: Use `sync.Once` to initialize a global configuration struct.
+- [x] **Refactor**: Replace hardcoded literals in `ai/client.go`, `store/qdrant.go`, and `cmd/` with calls to `config.Get()`.
+
+## Priority 4: Ingestion Quality (Advanced Chunking)
+- [ ] **Statistical Semantic Chunking**: Implement a sentence-based splitter that uses cosine similarity between sentence embeddings to identify logical breakpoints.
+- [ ] **Context Overlap**: Add a configurable sliding window overlap to prevent context loss at chunk boundaries.
 
 ## Future Ideas
 - [ ] Support for EPUB files.
