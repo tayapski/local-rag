@@ -43,7 +43,7 @@ func (s *Store) CreateCollection(collectionName string) error {
 		&qdrant.CreateCollection{
 			CollectionName: collectionName,
 			VectorsConfig: qdrant.NewVectorsConfig(&qdrant.VectorParams{
-				Size: 768,
+				Size:     768,
 				Distance: qdrant.Distance_Cosine,
 			}),
 		},
@@ -60,14 +60,15 @@ func (s *Store) UpsertChunks(collectionName string, chunks []ingest.Chunk) error
 	pointStructSlice := make([]*qdrant.PointStruct, len(chunks))
 
 	for i, chunk := range chunks {
-		
+
 		pointStructSlice[i] = &qdrant.PointStruct{
-			Id: qdrant.NewIDUUID(chunks[i].ID),
+			Id:      qdrant.NewIDUUID(chunks[i].ID),
 			Vectors: qdrant.NewVectors(chunk.Embedding...),
 			Payload: qdrant.NewValueMap(map[string]any{
-				"content": chunk.Content,
-				"page": chunk.PageNumber,
+				"content":   chunk.Content,
+				"page":      chunk.PageNumber,
 				"file_path": chunk.FilePath,
+				"source_id": chunk.SourceID,
 			}),
 		}
 	}
@@ -77,8 +78,8 @@ func (s *Store) UpsertChunks(collectionName string, chunks []ingest.Chunk) error
 		context.Background(),
 		&qdrant.UpsertPoints{
 			CollectionName: collectionName,
-			Points: pointStructSlice,
-			Wait: &wait,
+			Points:         pointStructSlice,
+			Wait:           &wait,
 		},
 	)
 
@@ -90,21 +91,21 @@ func (s *Store) UpsertChunks(collectionName string, chunks []ingest.Chunk) error
 
 }
 
-func (s *Store) Search(collectionName string, queryVector []float32) ([]string, error){
+func (s *Store) Search(collectionName string, queryVector []float32) ([]string, error) {
 	searchResult, err := s.client.Query(
 		context.Background(),
 		&qdrant.QueryPoints{
 			CollectionName: collectionName,
-			Query: qdrant.NewQuery(queryVector...),
-			Limit: utils.PtrUint64(uint64(5)),
-			WithPayload: qdrant.NewWithPayloadEnable(true),
+			Query:          qdrant.NewQuery(queryVector...),
+			Limit:          utils.PtrUint64(uint64(5)),
+			WithPayload:    qdrant.NewWithPayloadEnable(true),
 		},
 	)
 
-	if err != nil{
+	if err != nil {
 		return nil, err
 	}
-	
+
 	payloadContents := make([]string, len(searchResult))
 	for i := range searchResult {
 		payloadContents[i] = searchResult[i].Payload["content"].GetStringValue()

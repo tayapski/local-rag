@@ -2,24 +2,25 @@ package cmd
 
 import (
 	"fmt"
+	"github.com/spf13/cobra"
 	"local-rag/internal/ai"
+	"local-rag/internal/config"
 	"local-rag/internal/ingest"
 	"local-rag/internal/store"
-	"local-rag/internal/config"
+	"local-rag/internal/db"
 	"os"
 	"path/filepath"
 	"strings"
-	"github.com/spf13/cobra"
 )
 
 var bookPath string
 
-
 var ingestCmd = &cobra.Command{
-    Use: "ingest",
-    Short: "Ingest files (text or otherwise) into the knowledge base",
-    RunE: func(cmd *cobra.Command, args []string) error {
-        fmt.Printf("Ingesting books within %s\n", bookPath)
+	Use:   "ingest",
+	Short: "Ingest files (text or otherwise) into the knowledge base",
+	RunE: func(cmd *cobra.Command, args []string) error {
+		cmdCtx := cmd.Context()
+		fmt.Printf("Ingesting books within %s\n", bookPath)
 		envConfig := config.GetConfig()
 		aiClient := ai.NewClient(envConfig.OllamaURL)
 		storeClient, err := store.NewStore()
@@ -27,11 +28,17 @@ var ingestCmd = &cobra.Command{
 			return err
 		}
 
+		db, err := db.NewMetadataDB()
+		if err != nil {
+			return err
+		}
+		defer db.Close()
+
 		err = storeClient.CreateCollection(topic)
 		if err != nil {
 			if strings.Contains(err.Error(), "already exists") {
 				fmt.Printf("Warning: collection %s will be reused\n", topic)
-			}else{
+			} else {
 				return err
 			}
 		} else {
@@ -40,12 +47,12 @@ var ingestCmd = &cobra.Command{
 
 		dirEntries, err := os.ReadDir(bookPath)
 
-		if err != nil{
+		if err != nil {
 			fmt.Printf("Got an error: %v\n", err)
 			return err
 		}
 
-		ingestor := ingest.Ingestor{Topic: topic}
+		ingestor := ingest.Ingestor{Topic: topic, DB: db}
 
 		for _, file := range dirEntries {
 			fileName := file.Name()
@@ -56,7 +63,8 @@ var ingestCmd = &cobra.Command{
 			fmt.Println("Reading", fileName)
 
 			fullPath := bookPath + "/" + fileName
-			chunks, err := ingestor.ExtractChunk(fullPath)
+
+			chunks, err := ingestor.ProcessFile(cmdCtx, fullPath)
 			if err != nil {
 				return err
 			}
@@ -78,14 +86,14 @@ var ingestCmd = &cobra.Command{
 		}
 
 		return nil
-    },
+	},
 }
 
 func init() {
-	
+
 	rootCmd.AddCommand(ingestCmd)
 	ingestCmd.Flags().StringVarP(&bookPath, "path", "p", "", "Path to the books directory")
-	ingestCmd.Flags().StringVarP(&topic, "topic", "t", "", "Topic covered by books in the directory")	
+	ingestCmd.Flags().StringVarP(&topic, "topic", "t", "", "Topic covered by books in the directory")
 	ingestCmd.MarkFlagRequired("topic")
 	ingestCmd.MarkFlagRequired("path")
 }

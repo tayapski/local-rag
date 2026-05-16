@@ -12,7 +12,7 @@ import (
 )
 
 var askCmd = &cobra.Command{
-	Use: "ask",
+	Use:   "ask",
 	Short: "Ask questions about a topic",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		envConfig := config.GetConfig()
@@ -61,7 +61,6 @@ var askCmd = &cobra.Command{
 		return nil
 	},
 }
-
 
 func init() {
 	rootCmd.AddCommand(askCmd)

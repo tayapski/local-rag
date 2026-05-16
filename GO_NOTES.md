@@ -115,3 +115,14 @@ These notes track key Go concepts discovered while building the `local-rag` proj
 - **`go get <package>`**: Downloads a specific package and adds it to your `go.mod` file.
 - **`go mod tidy`**: Cleans up your `go.mod` and `go.sum` files. It removes unused dependencies and adds missing ones based on your imports.
 - **`go mod download`**: Downloads all dependencies listed in your `go.mod` file to your local cache. Useful for CI/CD or fresh setups.
+
+## 26. Zero Values & Struct Initialization
+- **The Concept**: In Go, variables are never "uninitialized" or `undefined`. If you don't provide a value, Go assigns a "Zero Value":
+    - `int/float`: `0`
+    - `string`: `""` (empty string)
+    - `bool`: `false`
+    - `pointers/slices/maps/channels`: `nil`
+- **Structs as "Buckets"**: You can create a struct and only fill a few fields. The rest will hold their zero values. This is common when:
+    1. **Preparing Data**: Creating a struct to save to a database where the `ID` is unknown (it stays `0`).
+    2. **Receiving Data**: Using a struct field as a placeholder for a database return value (like a `RETURNING id` or `LastInsertId`).
+- **`omitempty` tag**: Used in JSON tags (`` `json:"id,omitempty"` ``) to tell Go to skip that field during JSON encoding if it holds its zero value.

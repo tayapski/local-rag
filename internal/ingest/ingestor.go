@@ -1,25 +1,30 @@
 package ingest
 
 import (
+	"context"
 	"crypto/md5"
 	"fmt"
+	"local-rag/internal/db"
+	"local-rag/internal/utils"
 	"os"
 	"path/filepath"
-	"github.com/ledongthuc/pdf"
 	"github.com/google/uuid"
+	"github.com/ledongthuc/pdf"
 )
 
 type Ingestor struct {
 	Topic string
+	DB *db.MetadataDB
 }
 
 type Chunk struct {
-	ID			string
-	Content 	string
-	PageNumber 	int
-	ChunkIndex 	int
-	FilePath 	string
-	Embedding	[]float32
+	ID         string
+	Content    string
+	PageNumber int
+	ChunkIndex int
+	FilePath   string
+	SourceID   int64
+	Embedding  []float32
 }
 
 func (i *Ingestor) GenerateChunkID(filePath string, page int, chunkIndex int) string {
@@ -30,51 +35,80 @@ func (i *Ingestor) GenerateChunkID(filePath string, page int, chunkIndex int) st
 	return chunkID.String()
 }
 
-func (ing *Ingestor) ExtractChunk(path string) ([]Chunk, error) {
+func (i *Ingestor) ProcessFile(ctx context.Context, path string) ([]Chunk, error) {
 	f, err := os.Open(path)
 	if err != nil {
 		return nil, err
 	}
 	defer f.Close()
 
-	fileMeta, err := f.Stat()
-	if err != nil {
-		return nil, err
-	}
-	
-	reader, err := pdf.NewReader(f, fileMeta.Size())
+	checksum, err := utils.ComputeHash(f)
 	if err != nil {
 		return nil, err
 	}
 
-	var allChunks []Chunk;
+	_, err = f.Seek(0, 0)
+	if err != nil {
+		return nil, err
+	}
+
+	fi, _ := f.Stat()
+	pdfReader, err := pdf.NewReader(f, fi.Size())
+
+	// getting the metadata
+	trailer := pdfReader.Trailer()
+	metadata := make(map[string]any)
+	for _, key := range trailer.Keys() {
+		metadata[key] = trailer.Key(key).String()
+	}
+
+	docId, err := i.DB.SaveSource(
+		ctx,
+		&db.Source{
+			FilePath: path,
+			CheckSum: checksum,
+			Metadata: metadata,
+		},
+	)
+
+	if err != nil {
+		return nil, err
+	}
 	
-	for p := 1; p<= reader.NumPage(); p++ {
-		page := reader.Page(p)
+	return i.ExtractChunk(pdfReader, path, docId)
+}
+
+func (i *Ingestor) ExtractChunk(pReader *pdf.Reader, path string, sourceID int64) ([]Chunk, error) {
+
+	var allChunks []Chunk
+
+	for p := 1; p <= pReader.NumPage(); p++ {
+		page := pReader.Page(p)
 		content, err := page.GetPlainText(nil)
 		if err != nil {
 			return nil, err
 		}
 
 		runes := []rune(content)
-		for i := 0; i < len(runes); i += 1000 {
-			end := min(i+1000, len(runes))
-			stringChunk := string(runes[i:end])
+		for idx := 0; idx < len(runes); idx += 1000 {
+			end := min(idx+1000, len(runes))
+			stringChunk := string(runes[idx:end])
 			nextChunkIndex := len(allChunks)
 
-			newChunk := Chunk {
-				ID: ing.GenerateChunkID(path, p, nextChunkIndex),
-				Content: stringChunk,
+			newChunk := Chunk{
+				ID:         i.GenerateChunkID(path, p, nextChunkIndex),
+				Content:    stringChunk,
 				PageNumber: p,
 				ChunkIndex: len(allChunks),
-				FilePath: path,
+				FilePath:   path,
+				SourceID: 	sourceID,
 			}
 
-			allChunks = append(allChunks, newChunk);
+			allChunks = append(allChunks, newChunk)
 		}
 
 	}
-	
+
 	return allChunks, nil
-	
+
 }

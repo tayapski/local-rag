@@ -11,13 +11,13 @@ import (
 )
 
 type Client struct {
-	BaseURL 	string
+	BaseURL    string
 	HTTPClient *http.Client
 }
 
 type EmbeddingRequest struct {
-	Model 	string `json:"model"`
-	Prompt	string `json:"prompt"`
+	Model  string `json:"model"`
+	Prompt string `json:"prompt"`
 }
 
 type EmbeddingResponse struct {
@@ -25,19 +25,18 @@ type EmbeddingResponse struct {
 }
 
 type GenerateRequest struct {
-	Model		string 	`json:"model"`
-	Prompt		string	`json:"prompt"`
-	StreamMode	bool	`json:"stream"`
-
+	Model      string `json:"model"`
+	Prompt     string `json:"prompt"`
+	StreamMode bool   `json:"stream"`
 }
 
 type GenerateResponse struct {
-	Response 	string	`json:"response"`
+	Response string `json:"response"`
 }
 
 func NewClient(baseURL string) *Client {
 	return &Client{
-		BaseURL: baseURL,
+		BaseURL:    baseURL,
 		HTTPClient: &http.Client{},
 	}
 }
@@ -46,7 +45,7 @@ func (c *Client) BatchEmbed(model string, chunks []ingest.Chunk, concurrency int
 	jobs := make(chan int, len(chunks))
 	var wg sync.WaitGroup
 
-	for w := 1; w<= concurrency; w++ {
+	for w := 1; w <= concurrency; w++ {
 		wg.Add(1)
 
 		go func() {
@@ -76,11 +75,11 @@ func (c *Client) BatchEmbed(model string, chunks []ingest.Chunk, concurrency int
 
 func (c *Client) GetEmbedding(model string, prompt string) ([]float64, error) {
 	reqBody := EmbeddingRequest{
-		Model: model,
+		Model:  model,
 		Prompt: prompt,
 	}
 
-	encodedJsonBody, err := json.Marshal(reqBody);
+	encodedJsonBody, err := json.Marshal(reqBody)
 	if err != nil {
 		return nil, err
 	}
@@ -90,7 +89,6 @@ func (c *Client) GetEmbedding(model string, prompt string) ([]float64, error) {
 		return nil, err
 	}
 	defer resp.Body.Close()
-
 
 	var response EmbeddingResponse
 	responseCode := resp.StatusCode
@@ -107,15 +105,15 @@ func (c *Client) GetEmbedding(model string, prompt string) ([]float64, error) {
 
 }
 
-func (c *Client) Generate(model string, prompt string) (string, error){
+func (c *Client) Generate(model string, prompt string) (string, error) {
 
 	reqBody := GenerateRequest{
-		Model: model,
-		Prompt: prompt,
+		Model:      model,
+		Prompt:     prompt,
 		StreamMode: false,
 	}
 
-	encodedJsonBody, err := json.Marshal(reqBody);
+	encodedJsonBody, err := json.Marshal(reqBody)
 	if err != nil {
 		return "", err
 	}
@@ -125,7 +123,6 @@ func (c *Client) Generate(model string, prompt string) (string, error){
 		return "", err
 	}
 	defer resp.Body.Close()
-
 
 	var response GenerateResponse
 	responseCode := resp.StatusCode
@@ -139,6 +136,5 @@ func (c *Client) Generate(model string, prompt string) (string, error){
 	}
 
 	return response.Response, nil
-
 
 }
