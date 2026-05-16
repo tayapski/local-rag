@@ -30,6 +30,7 @@ go.work.sum
 # Local data storage
 qdrant_storage/
 ollama_data/
+sources.db
 
 # Editor/IDE
 # .idea/
