@@ -82,7 +82,25 @@ These notes track key Go concepts discovered while building the `local-rag` proj
 ## 18. Context (`context.Context`)
 - **Purpose**: Carries deadlines, cancellation signals, and other request-scoped values across API boundaries and goroutines.
 - **Convention**: Always pass it as the first argument in functions that perform I/O (Database calls, HTTP requests).
-- **Background**: `context.Background()` is the default "empty" context used when you don't have a specific deadline yet.
+- **Immutability & Hierarchy**:
+    - Context is **immutable**. You never "modify" a context; you **derive** a new child from a parent.
+    - Functions like `context.WithTimeout` or `context.WithValue` return a *new* context object.
+    - **One-Way Flow**: Children see parent values, but parents **cannot** see values added by their children. (Similar to React Props).
+- **Information Propagation (Values)**:
+    - Use `context.WithValue` for request-scoped metadata (Trace IDs, User IDs, Auth tokens).
+    - **Key Safety**: Always use a custom unexported type for keys to prevent collisions between packages.
+    - **Automation**: In production, "Injection" is usually done once at the entry point (Middleware/CLI start), while "Propagation" is automatic as you pass the `ctx` object down.
+- **Signals vs. Data**:
+    - Experts use Context primarily for **Signals** ("Stop working now") rather than a general "Bag of Variables."
+    - Use the `Done()` channel with `select` to handle timeouts gracefully.
+- **The "Goroutine Leak" (Interview Critical)**:
+    - Always call the `cancel()` function returned by `WithCancel`, `WithTimeout`, or `WithDeadline` (usually via `defer cancel()`).
+    - **Why**: Failure to cancel a context leaves internal timers/resources active in memory until they expire, which can cause significant memory leaks in high-traffic apps.
+- **Detaching Context (Go 1.21+)**:
+    - Use `context.WithoutCancel(parent)` if you need a child context that keeps the parent's values (like Trace IDs) but ignores the parent's cancellation signal (e.g., for background cleanup tasks).
+- **API Design Rules**:
+    - `ctx` is always the **first** argument.
+    - Never store a `Context` inside a `struct`; keep it on the stack to maintain clear lifecycles.
 
 ## 19. Type Casting (Conversions)
 - **Strictness**: Go does NOT implicitly convert types.
@@ -100,8 +118,15 @@ These notes track key Go concepts discovered while building the `local-rag` proj
 - **The `go` Keyword**: Prefixing a function call with `go` starts a lightweight thread (goroutine) that runs independently.
 - **`sync.WaitGroup`**: Used to wait for a collection of goroutines to finish. Use `.Add(n)`, `.Done()`, and `.Wait()`.
 
-## 23. Channels (The Pipeline)
+## 23. Channels & The `<-` Operator
 - **The Concept**: A typed conduit through which you can send and receive values.
+- **The Operator (`<-`)**: Shows the flow of data.
+    - **Receive**: `val := <-ch` (Data moves OUT of channel into variable).
+    - **Send**: `ch <- val` (Data moves INTO channel).
+- **Directional Channels**: Used in function signatures to restrict behavior.
+    - `ch <-chan int`: Receive-only (you can only take things out).
+    - `ch chan<- int`: Send-only (you can only put things in).
+- **Mnemonic**: The arrow always points to the left. The channel's position relative to it determines if it's a sender or receiver.
 - **Unbuffered**: `make(chan int)`. Sending and receiving block until both sides are ready (a "handshake").
 - **Buffered**: `make(chan int, capacity)`. Sends only block when the buffer is full. Receives only block when the buffer is empty.
 - **Closing**: Use `close(ch)` to signal completion. You can still receive from a closed channel until the buffer is empty, but you cannot send to it.
