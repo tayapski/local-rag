@@ -14,6 +14,12 @@ type Store struct {
 	client *qdrant.Client
 }
 
+type SearchResult struct {
+	Content string
+	PageNumber int
+	SourceID int64
+}
+
 func NewStore() (*Store, error) {
 	cfg := config.GetConfig()
 	port, err := strconv.Atoi(cfg.QdrantPort)
@@ -91,8 +97,8 @@ func (s *Store) UpsertChunks(collectionName string, chunks []ingest.Chunk) error
 
 }
 
-func (s *Store) Search(collectionName string, queryVector []float32) ([]string, error) {
-	searchResult, err := s.client.Query(
+func (s *Store) Search(collectionName string, queryVector []float32) ([]SearchResult, error) {
+	queryResults, err := s.client.Query(
 		context.Background(),
 		&qdrant.QueryPoints{
 			CollectionName: collectionName,
@@ -106,10 +112,15 @@ func (s *Store) Search(collectionName string, queryVector []float32) ([]string, 
 		return nil, err
 	}
 
-	payloadContents := make([]string, len(searchResult))
-	for i := range searchResult {
-		payloadContents[i] = searchResult[i].Payload["content"].GetStringValue()
+	searchResults := make([]SearchResult, len(queryResults))
+	for i := range searchResults {
+		payload := queryResults[i].Payload
+		searchResults[i] = SearchResult{
+			Content: payload["content"].GetStringValue(),
+			PageNumber: int(payload["page"].GetIntegerValue()),
+			SourceID: payload["source_id"].GetIntegerValue(),
+		}
 	}
 
-	return payloadContents, nil
+	return searchResults, nil
 }

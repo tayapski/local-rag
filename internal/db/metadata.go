@@ -66,6 +66,21 @@ func (m *MetadataDB) SaveSource(ctx context.Context, source *Source) (int64, err
 	return id, nil
 }
 
+func (m *MetadataDB) GetSource(ctx context.Context, sourceID int64) (*Source, error) {
+	var source Source
+	var metaJSON string
+
+	query := `SELECT file_path, metadata FROM sources WHERE id = ?`
+	err := m.db.QueryRowContext(ctx, query, sourceID).Scan(&source.FilePath, &metaJSON)
+	if err != nil {
+		return nil, err
+	}
+
+	json.Unmarshal([]byte(metaJSON), &source.Metadata)
+	return &source, nil
+
+}
+
 func (m *MetadataDB) Close() error {
 	return m.db.Close()
 }

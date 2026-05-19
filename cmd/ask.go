@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"local-rag/internal/ai"
 	"local-rag/internal/config"
+	"local-rag/internal/db"
 	"local-rag/internal/store"
 	"local-rag/internal/utils"
 	"strings"
@@ -15,15 +16,22 @@ var askCmd = &cobra.Command{
 	Use:   "ask",
 	Short: "Ask questions about a topic",
 	RunE: func(cmd *cobra.Command, args []string) error {
+		cmdCtx := cmd.Context()
 		envConfig := config.GetConfig()
 
 		aiClient := ai.NewClient(envConfig.OllamaURL)
 		storeClient, err := store.NewStore()
-
-		if err != nil {
+		if err != nil {	
 			return err
 		}
 
+		db, err := db.NewMetadataDB()
+		if err != nil {
+			return err
+		}
+		defer db.Close()
+
+	
 		fmt.Println("Processing query")
 		prompt := args[0]
 		promptVector, err := aiClient.GetEmbedding("nomic-embed-text", prompt)
@@ -44,7 +52,13 @@ var askCmd = &cobra.Command{
 		promptBuilder.WriteString("Context:\n")
 
 		for _, result := range searchResults {
-			promptBuilder.WriteString(result)
+			source, err := db.GetSource(cmdCtx, result.SourceID)
+			if err != nil {
+				return err
+			}
+			citation := fmt.Sprintf("[Source: %s, Page: %d]", source.Metadata["title"], result.PageNumber)
+
+			promptBuilder.WriteString(fmt.Sprintf("%s\n%s\n\n", citation, result.Content))
 			promptBuilder.WriteString("\n")
 		}
 
