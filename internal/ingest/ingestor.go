@@ -56,10 +56,10 @@ func (i *Ingestor) ProcessFile(ctx context.Context, path string) ([]Chunk, error
 	pdfReader, err := pdf.NewReader(f, fi.Size())
 
 	// getting the metadata
-	trailer := pdfReader.Trailer()
+	info := pdfReader.Trailer().Key("Info")
 	metadata := make(map[string]any)
-	for _, key := range trailer.Keys() {
-		metadata[key] = trailer.Key(key).String()
+	for _, key := range info.Keys() {
+		metadata[key] = info.Key(key).String()
 	}
 
 	docId, err := i.DB.SaveSource(

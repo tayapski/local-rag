@@ -27,6 +27,8 @@ func NewMetadataDB() (*MetadataDB, error) {
 		return nil, err
 	}
 
+	db.Exec("PRAGMA journal_mode=WAL;")
+	db.Exec("PRAGMA synchronous=NORMAL;")
 	schema := `
 	CREATE TABLE IF NOT EXISTS sources (
 		id INTEGER PRIMARY KEY AUTOINCREMENT,
