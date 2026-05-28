@@ -34,7 +34,7 @@ var ingestCmd = &cobra.Command{
 		}
 		defer db.Close()
 
-		err = storeClient.CreateCollection(topic)
+		err = storeClient.CreateCollection(cmdCtx, topic)
 		if err != nil {
 			if strings.Contains(err.Error(), "already exists") {
 				fmt.Printf("Warning: collection %s will be reused\n", topic)
@@ -71,13 +71,13 @@ var ingestCmd = &cobra.Command{
 
 			fmt.Printf("Successfully read %d chunks from %s\n", len(chunks), fileName)
 
-			err = aiClient.BatchEmbed("nomic-embed-text", chunks, 4)
+			err = aiClient.BatchEmbed(cmdCtx, "nomic-embed-text", chunks, 4)
 			if err != nil {
 				return err
 			}
 
 			fmt.Printf("Retrieved embeddings for %s\n", fileName)
-			err = storeClient.UpsertChunks(topic, chunks)
+			err = storeClient.UpsertChunks(cmdCtx, topic, chunks)
 			if err != nil {
 				return err
 			}

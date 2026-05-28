@@ -75,14 +75,19 @@ func (i *Ingestor) ProcessFile(ctx context.Context, path string) ([]Chunk, error
 		return nil, err
 	}
 	
-	return i.ExtractChunk(pdfReader, path, docId)
+	return i.ExtractChunk(ctx, pdfReader, path, docId)
 }
 
-func (i *Ingestor) ExtractChunk(pReader *pdf.Reader, path string, sourceID int64) ([]Chunk, error) {
+func (i *Ingestor) ExtractChunk(ctx context.Context, pReader *pdf.Reader, path string, sourceID int64) ([]Chunk, error) {
 
 	var allChunks []Chunk
 
 	for p := 1; p <= pReader.NumPage(); p++ {
+		select {
+		case <-ctx.Done():
+			return nil, ctx.Err()
+		default:
+		}
 		page := pReader.Page(p)
 		content, err := page.GetPlainText(nil)
 		if err != nil {

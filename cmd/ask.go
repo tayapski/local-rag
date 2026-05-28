@@ -34,14 +34,14 @@ var askCmd = &cobra.Command{
 	
 		fmt.Println("Processing query")
 		prompt := args[0]
-		promptVector, err := aiClient.GetEmbedding("nomic-embed-text", prompt)
+		promptVector, err := aiClient.GetEmbedding(cmdCtx, "nomic-embed-text", prompt)
 		if err != nil {
 			return err
 		}
 
 		fmt.Println("Building context")
 		searchResults, err := storeClient.Search(
-			topic, utils.ConvertSlice(promptVector),
+			cmdCtx, topic, utils.ConvertSlice(promptVector),
 		)
 		if err != nil {
 			return err
@@ -67,7 +67,7 @@ var askCmd = &cobra.Command{
 		promptBuilder.WriteString("\nAnswer: ")
 
 		fmt.Println("Context and prompt completed")
-		answer, err := aiClient.Generate("llama3", promptBuilder.String())
+		answer, err := aiClient.Generate(cmdCtx, "llama3", promptBuilder.String())
 		if err != nil {
 			return err
 		}

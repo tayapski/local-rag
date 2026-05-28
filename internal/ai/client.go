@@ -2,6 +2,7 @@ package ai
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"local-rag/internal/ingest"
@@ -41,8 +42,13 @@ func NewClient(baseURL string) *Client {
 	}
 }
 
-func (c *Client) BatchEmbed(model string, chunks []ingest.Chunk, concurrency int) error {
+func (c *Client) BatchEmbed(ctx context.Context, model string, chunks []ingest.Chunk, concurrency int) error {
 	jobs := make(chan int, len(chunks))
+	errs := make(chan error, len(chunks))
+	ctx, cancel := context.WithCancel(ctx)
+
+	defer cancel()
+
 	var wg sync.WaitGroup
 
 	for w := 1; w <= concurrency; w++ {
@@ -52,10 +58,16 @@ func (c *Client) BatchEmbed(model string, chunks []ingest.Chunk, concurrency int
 			defer wg.Done()
 
 			for index := range jobs {
-				vector, err := c.GetEmbedding(model, chunks[index].Content)
+				select {
+				case <-ctx.Done():
+					return
+				default:
+				}
+				vector, err := c.GetEmbedding(ctx, model, chunks[index].Content)
 				if err != nil {
-					fmt.Printf("Error embedding chunk %d: %v\n", index, err)
-					continue
+					errs <- err
+					cancel()
+					return
 				}
 
 				chunks[index].Embedding = utils.ConvertSlice(vector)
@@ -70,10 +82,16 @@ func (c *Client) BatchEmbed(model string, chunks []ingest.Chunk, concurrency int
 	close(jobs)
 
 	wg.Wait()
+	select {
+	case err := <-errs:
+		return err
+	default:
+	}
+	
 	return nil
 }
 
-func (c *Client) GetEmbedding(model string, prompt string) ([]float64, error) {
+func (c *Client) GetEmbedding(ctx context.Context, model string, prompt string) ([]float64, error) {
 	reqBody := EmbeddingRequest{
 		Model:  model,
 		Prompt: prompt,
@@ -84,7 +102,13 @@ func (c *Client) GetEmbedding(model string, prompt string) ([]float64, error) {
 		return nil, err
 	}
 
-	resp, err := c.HTTPClient.Post(c.BaseURL+"/api/embeddings", "application/json", bytes.NewReader(encodedJsonBody))
+	postRequest, err := http.NewRequestWithContext(ctx, "POST", c.BaseURL+"/api/embeddings", bytes.NewReader(encodedJsonBody))
+	if err != nil {
+		return nil, err
+	}
+	postRequest.Header.Set("Content-Type", "application/json")
+
+	resp, err := c.HTTPClient.Do(postRequest);
 	if err != nil {
 		return nil, err
 	}
@@ -105,7 +129,7 @@ func (c *Client) GetEmbedding(model string, prompt string) ([]float64, error) {
 
 }
 
-func (c *Client) Generate(model string, prompt string) (string, error) {
+func (c *Client) Generate(ctx context.Context, model string, prompt string) (string, error) {
 
 	reqBody := GenerateRequest{
 		Model:      model,
@@ -118,7 +142,13 @@ func (c *Client) Generate(model string, prompt string) (string, error) {
 		return "", err
 	}
 
-	resp, err := c.HTTPClient.Post(c.BaseURL+"/api/generate", "application/json", bytes.NewReader(encodedJsonBody))
+	postRequest, err := http.NewRequestWithContext(ctx, "POST", c.BaseURL+"/api/generate", bytes.NewReader(encodedJsonBody))
+	if err != nil {
+		return "", err
+	}
+	postRequest.Header.Set("Content-Type", "application/json")
+
+	resp, err := c.HTTPClient.Do(postRequest);
 	if err != nil {
 		return "", err
 	}

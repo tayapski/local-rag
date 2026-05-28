@@ -43,9 +43,9 @@ func NewStore() (*Store, error) {
 	}, nil
 }
 
-func (s *Store) CreateCollection(collectionName string) error {
+func (s *Store) CreateCollection(ctx context.Context, collectionName string) error {
 	err := s.client.CreateCollection(
-		context.Background(),
+		ctx,
 		&qdrant.CreateCollection{
 			CollectionName: collectionName,
 			VectorsConfig: qdrant.NewVectorsConfig(&qdrant.VectorParams{
@@ -61,7 +61,7 @@ func (s *Store) CreateCollection(collectionName string) error {
 	return nil
 }
 
-func (s *Store) UpsertChunks(collectionName string, chunks []ingest.Chunk) error {
+func (s *Store) UpsertChunks(ctx context.Context, collectionName string, chunks []ingest.Chunk) error {
 
 	pointStructSlice := make([]*qdrant.PointStruct, len(chunks))
 
@@ -81,7 +81,7 @@ func (s *Store) UpsertChunks(collectionName string, chunks []ingest.Chunk) error
 
 	wait := true
 	_, err := s.client.Upsert(
-		context.Background(),
+		ctx,
 		&qdrant.UpsertPoints{
 			CollectionName: collectionName,
 			Points:         pointStructSlice,
@@ -97,9 +97,9 @@ func (s *Store) UpsertChunks(collectionName string, chunks []ingest.Chunk) error
 
 }
 
-func (s *Store) Search(collectionName string, queryVector []float32) ([]SearchResult, error) {
+func (s *Store) Search(ctx context.Context, collectionName string, queryVector []float32) ([]SearchResult, error) {
 	queryResults, err := s.client.Query(
-		context.Background(),
+		ctx,
 		&qdrant.QueryPoints{
 			CollectionName: collectionName,
 			Query:          qdrant.NewQuery(queryVector...),
